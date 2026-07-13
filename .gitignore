@@ -1,3 +1,4 @@
 boringssl
 zig-out
 .zig-cache
+zig-pkg
