@@ -148,9 +148,12 @@ pub fn build(b: *std.Build) !void {
     const upstream_root = patch_step.getDirectory();
 
     // Grab the sources.json which tells us what to build
-    const sources_file = try build_root.openFile(io, "sources.json", .{});
-    var reader = sources_file.reader(io, &.{});
-    const source_content = try reader.interface.allocRemaining(b.allocator, .unlimited);
+    const source_content = upstream.builder.build_root.handle.readFileAlloc(
+        io,
+        "gen/sources.json",
+        b.allocator,
+        .unlimited,
+    ) catch @panic("OOM");
 
     // Parse it
     const source = try std.json.parseFromSlice(BuildSource, b.allocator, source_content, .{ .ignore_unknown_fields = true });
