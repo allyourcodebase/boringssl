@@ -1,6 +1,4 @@
 const std = @import("std");
-const native_os = builtin.os.tag;
-const builtin = @import("builtin");
 const patch = @import("patch");
 
 const BoringSSLModule = struct {
@@ -132,10 +130,7 @@ pub fn build(b: *std.Build) !void {
 
     const patch_step = patch.PatchStep.create(b, .{
         .optimize = .ReleaseSafe,
-        .target = .{
-            .query = .{},
-            .result = builtin.target,
-        },
+        .target = b.graph.host,
         .root_directory = upstream.path(""),
         .strip = 1,
     });
@@ -261,10 +256,7 @@ pub fn build(b: *std.Build) !void {
 
     // Grab nasm
     const nasm_dep = b.dependency("nasm", .{
-        .target = std.Build.ResolvedTarget{
-            .query = .{},
-            .result = builtin.target,
-        },
+        .target = b.graph.host,
         .optimize = .ReleaseSafe,
     });
     const nasm = nasm_dep.artifact("nasm");
