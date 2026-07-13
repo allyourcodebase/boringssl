@@ -2,6 +2,7 @@
     .name = .boringssl,
     .version = "0.20260526.0",
     .fingerprint = 0x5f0947d235641b12,
+    .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .boringssl = .{
             .url = "https://github.com/google/boringssl/archive/190fa71435c8675b80d7883e5d01858db4c91180.tar.gz",
