@@ -51,7 +51,7 @@ fn getNasmFormat(target: std.Target) []const u8 {
     }
 }
 
-fn addSourceFilesFromModule(b: *std.Build, upsteam: std.Build.LazyPath, step: *std.Build.Step.Compile, module: *const BoringSSLModule, nasm: *std.Build.Step.Compile) !void {
+fn addSourceFilesFromModule(b: *std.Build, root: std.Build.LazyPath, step: *std.Build.Step.Compile, module: *const BoringSSLModule, nasm: *std.Build.Step.Compile) !void {
     var srcs_c = try std.ArrayList([]const u8).initCapacity(b.allocator, module.srcs.len);
     var srcs_cpp = try std.ArrayList([]const u8).initCapacity(b.allocator, module.srcs.len);
 
@@ -68,39 +68,33 @@ fn addSourceFilesFromModule(b: *std.Build, upsteam: std.Build.LazyPath, step: *s
         }
     }
 
-    for (srcs_cpp.items) |item| {
-        step.root_module.addCSourceFile(.{
-            .file = upsteam.path(b, b.pathJoin(&.{item})),
-            .flags = &.{ "-DWIN32_LEAN_AND_MEAN", "-std=c++17", "-DNOMINMAX" },
-        });
-    }
+    step.root_module.addCSourceFiles(.{
+        .root = root,
+        .files = srcs_cpp.items,
+        .flags = &.{ "-DWIN32_LEAN_AND_MEAN", "-std=c++17", "-DNOMINMAX" },
+    });
 
-    for (srcs_c.items) |item| {
-        step.root_module.addCSourceFile(.{
-            .file = upsteam.path(b, b.pathJoin(&.{item})),
-            .flags = &.{ "-DWIN32_LEAN_AND_MEAN", "-DNOMINMAX" },
-        });
-    }
+    step.root_module.addCSourceFiles(.{
+        .root = root,
+        .files = srcs_c.items,
+        .flags = &.{ "-DWIN32_LEAN_AND_MEAN", "-DNOMINMAX" },
+    });
 
     // Add asm
     if (module.@"asm") |asms| {
-        for (asms) |@"asm"| {
-            step.root_module.addCSourceFile(.{
-                .file = upsteam.path(b, b.pathJoin(&.{@"asm"})),
-                .flags = &.{""},
-            });
-        }
+        step.root_module.addCSourceFiles(.{
+            .root = root,
+            .files = asms,
+        });
     }
 
     // Add nasm
     if (step.rootModuleTarget().os.tag == .windows) {
         if (module.nasm) |nasms| {
-            const root = upsteam.path(b, "");
-
             for (nasms) |file| {
                 std.debug.assert(!std.fs.path.isAbsolute(file));
-                const src_file = upsteam.path(b, file);
-                const file_stem = std.mem.sliceTo(file, '.');
+                const src_file = root.path(b, file);
+                const file_stem = std.Io.Dir.path.stem(file);
 
                 const nasm_run = b.addRunArtifact(nasm);
 
@@ -117,7 +111,7 @@ fn addSourceFilesFromModule(b: *std.Build, upsteam: std.Build.LazyPath, step: *s
         }
     }
 
-    step.root_module.addIncludePath(upsteam.path(b, b.pathJoin(&.{"include"})));
+    step.root_module.addIncludePath(root.path(b, "include"));
 }
 
 pub fn build(b: *std.Build) !void {
@@ -269,33 +263,25 @@ pub fn build(b: *std.Build) !void {
 
     // Setup all modules to not require any order when modules depend on other modules
     for (modules) |*module| {
-        const mod = blk: {
-            switch (module.kind) {
-                .exe => {
-                    const mod = b.addExecutable(.{
-                        .name = module.name,
-                        .root_module = b.createModule(.{
-                            .target = target,
-                            .optimize = optimize,
-                        }),
-                    });
-                    break :blk mod;
-                },
-                .lib => {
-                    const mod = b.addLibrary(.{
-                        .name = module.name,
-                        .root_module = b.createModule(.{
-                            .target = target,
-                            .optimize = optimize,
-                        }),
-                        .linkage = .static,
-                    });
-                    break :blk mod;
-                },
-                else => {
-                    unreachable;
-                },
-            }
+        const mod = switch (module.kind) {
+            .exe => b.addExecutable(.{
+                .name = module.name,
+                .root_module = b.createModule(.{
+                    .target = target,
+                    .optimize = optimize,
+                    .link_libcpp = true,
+                }),
+            }),
+            .lib => b.addLibrary(.{
+                .name = module.name,
+                .root_module = b.createModule(.{
+                    .target = target,
+                    .optimize = optimize,
+                    .link_libcpp = true,
+                }),
+                .linkage = .static,
+            }),
+            else => unreachable,
         };
 
         // Depend on patch
@@ -308,10 +294,6 @@ pub fn build(b: *std.Build) !void {
     for (modules) |*module| {
         // This has to be valid - we just created it
         const mod = steps.get(module.name).?;
-
-        // Link std
-        mod.root_module.link_libc = true;
-        mod.root_module.link_libcpp = true;
 
         // Add the sources from the json module to the zig mod
         try addSourceFilesFromModule(b, upstream_root, mod, module.module, nasm);
