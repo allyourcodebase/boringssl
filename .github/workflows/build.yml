@@ -11,22 +11,22 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        target: [
-          native,
-          x86_64-linux-gnu,
-          x86_64-linux-musl,
-          x86_64-windows,
-          aarch64-macos,
-          aarch64-linux-gnu,
-          aarch64-linux-musl
-          # TODO: bsd
-        ]
-        optimize: [
-          Debug,
-          ReleaseSafe,
-          ReleaseFast,
-          ReleaseSmall
-        ]
+        target: [native]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-linux-musl
+          - os: ubuntu-latest
+            target: x86_64-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-macos
+          - os: ubuntu-latest
+            target: x86_64-windows
+          - os: ubuntu-latest
+            target: x86_64-freebsd
+          - os: ubuntu-latest
+            target: x86_64-netbsd
+          - os: ubuntu-latest
+            target: x86_64-openbsd
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -35,4 +35,4 @@ jobs:
         uses: mlugg/setup-zig@v2
 
       - name: Build
-        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=${{ matrix.optimize }}
+        run: zig build -Dtarget=${{ matrix.target }}
