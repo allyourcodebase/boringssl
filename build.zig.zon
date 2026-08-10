@@ -13,8 +13,8 @@
             .hash = "nasm-3.0.1-B_NnpQpTAAA25UxvqONakXtmj-a78PGe3xfgyDFgetb0",
         },
         .patch = .{
-            .url = "git+https://github.com/akunaakwei/zig-patch.git#a5bf3778de3cae7ee7cdbaa0db3cdc3715b1bcbf",
-            .hash = "patch-2.6.1-po1jOY5vAABWkdNnlxzrwMOSWfjOb_RUH8tcJVPK8Mgl",
+            .url = "git+https://github.com/lukaskastern/patch#ee92862bd9353c351697b36d12290caff213504e",
+            .hash = "patch-2.6.1-po1jOaJpAABylvuBy5C6R6BZO3coh-yD6FOZqwjkFVrs",
         },
         .googletest = .{
             .url = "git+https://github.com/allyourcodebase/googletest#1c0070a093a1f4b17f0cddf5c20f3fc63681191b",
