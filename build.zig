@@ -133,13 +133,14 @@ pub fn build(b: *std.Build) !void {
     }
 
     // Patch boringssl
-    const upstream_root = patch.PatchStep.patch(b, .{
+    const patcher = patch.Patcher.init(b, .{
         .optimize = .ReleaseSafe,
         .target = b.graph.host,
         .root_directory = upstream.path(""),
         .strip = 1,
         .patches = patches.items,
     });
+    const upstream_root = patcher.output_directory;
 
     const io = b.graph.io;
 
