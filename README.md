@@ -31,14 +31,14 @@ Declare a source file that imports the C includes.
 
 For example:
 
-src/my_ssl.c:
+`src/my_ssl.c:`
 ```c
 #include "openssl/ssl.h"
 ...
 ...
 ```
 
-Convert that source file into zig using the declared translate-c dependency.
+Convert that source file into zig using the declared `translate-c` dependency.
 
 ```zig
 // Translate my_ssl.c into zig
