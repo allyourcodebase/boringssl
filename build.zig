@@ -122,24 +122,27 @@ pub fn build(b: *std.Build) !void {
 
     const upstream = b.dependency("boringssl", .{});
 
-    const patch_step = patch.PatchStep.create(b, .{
+    var patches: std.ArrayList(std.Build.LazyPath) = .empty;
+
+    // Add patches
+    const patch_dir = try build_root.openDir(b.graph.io, "patches", .{ .iterate = true });
+    var iterator = patch_dir.iterate();
+    while (try iterator.next(b.graph.io)) |p| {
+        const patch_path = try std.fmt.allocPrint(b.allocator, "patches/{s}", .{p.name});
+        try patches.append(b.allocator, b.path(patch_path));
+    }
+
+    // Patch boringssl
+    const patcher = patch.Patcher.init(b, .{
         .optimize = .ReleaseSafe,
         .target = b.graph.host,
         .root_directory = upstream.path(""),
         .strip = 1,
+        .patches = patches.items,
     });
+    const upstream_root = patcher.output_directory;
 
     const io = b.graph.io;
-
-    // Add patches
-    const patch_dir = try build_root.openDir(io, "patches", .{ .iterate = true });
-    var iterator = patch_dir.iterate();
-    while (try iterator.next(io)) |p| {
-        const patch_path = try std.fmt.allocPrint(b.allocator, "patches/{s}", .{p.name});
-        patch_step.addPatch(b.path(patch_path));
-    }
-
-    const upstream_root = patch_step.getDirectory();
 
     // Grab the sources.json which tells us what to build
     const source_content = upstream.builder.build_root.handle.readFileAlloc(
