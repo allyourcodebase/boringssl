@@ -319,6 +319,5 @@ pub fn build(b: *std.Build) !void {
         b.installArtifact(mod);
     }
 
-    // Install headers directory - should only ssl do this or crypto as well?
-    steps.get("ssl").?.installHeadersDirectory(upstream_root.path(b, "include"), "", .{});
+    b.addNamedLazyPath("ssl_include", upstream_root.path(b, "include"));
 }

@@ -1,0 +1,13 @@
+diff --git a/include/openssl/base.h b/include/openssl/base.h
+index 1ce0e1bb2..ebc058e63 100644
+--- a/include/openssl/base.h
++++ b/include/openssl/base.h
+@@ -148,7 +148,7 @@ extern "C" {
+ // OPENSSL_GNUC_CLANG_PRAGMA emits a pragma on GCC or clang and nothing on other
+ // compilers.
+ #if defined(__GNUC__) || defined(__clang__)
+-#define OPENSSL_GNUC_CLANG_PRAGMA(arg) _Pragma(arg)
++#define OPENSSL_GNUC_CLANG_PRAGMA(arg) 
+ #else
+ #define OPENSSL_GNUC_CLANG_PRAGMA(arg)
+ #endif
