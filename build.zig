@@ -118,7 +118,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const build_root = b.build_root.handle;
+    const build_root = b.root.root_dir.handle;
 
     const upstream = b.dependency("boringssl", .{});
 
@@ -145,7 +145,7 @@ pub fn build(b: *std.Build) !void {
     const io = b.graph.io;
 
     // Grab the sources.json which tells us what to build
-    const source_content = upstream.builder.build_root.handle.readFileAlloc(
+    const source_content = upstream.builder.root.root_dir.handle.readFileAlloc(
         io,
         "gen/sources.json",
         b.allocator,
