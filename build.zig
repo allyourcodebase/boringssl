@@ -323,4 +323,5 @@ pub fn build(b: *std.Build) !void {
     }
 
     b.addNamedLazyPath("ssl_include", upstream_root.path(b, "include"));
+    steps.get("ssl").?.installHeadersDirectory(upstream_root.path(b, "include"), "", .{});
 }
