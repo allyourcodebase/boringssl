@@ -178,7 +178,7 @@ pub fn build(b: *std.Build) !void {
         ModuleInfo{
             .name = "bcm",
             .module = &build_source.bcm,
-            .kind = .lib,
+            .kind = .obj,
         },
         ModuleInfo{
             .name = "bssl",
@@ -187,7 +187,6 @@ pub fn build(b: *std.Build) !void {
             .module_dependencies = &.{
                 "ssl",
                 "crypto",
-                "bcm",
             },
             .system_dependencies = if (target.result.os.tag == .windows) &.{ "ws2_32", "dbghelp" } else &.{},
         },
@@ -195,6 +194,9 @@ pub fn build(b: *std.Build) !void {
             .name = "crypto",
             .module = &build_source.crypto,
             .kind = .lib,
+            .module_dependencies = &.{
+                "bcm",
+            },
         },
         ModuleInfo{
             .name = "ssl",
@@ -228,7 +230,6 @@ pub fn build(b: *std.Build) !void {
             .module_dependencies = &.{
                 "decrepit",
                 "crypto",
-                "bcm",
                 "test_support",
             },
             .dependencies = &.{ gtest, gmock },
@@ -241,7 +242,6 @@ pub fn build(b: *std.Build) !void {
             .module_dependencies = &.{
                 "ssl",
                 "crypto",
-                "bcm",
                 "test_support",
             },
             .dependencies = &.{ gtest, gmock },
@@ -279,6 +279,15 @@ pub fn build(b: *std.Build) !void {
                 }),
                 .linkage = .static,
             }),
+            .obj => b.addObject(.{
+                .name = module.name,
+                .root_module = b.createModule(.{
+                    .target = target,
+                    .optimize = optimize,
+                    .link_libcpp = true,
+                }),
+            }),
+
             else => unreachable,
         };
 
@@ -305,7 +314,11 @@ pub fn build(b: *std.Build) !void {
                     return error.InvalidStepOrder;
                 }
 
-                mod.root_module.linkLibrary(step.?);
+                if (step.?.kind == .obj) {
+                    mod.root_module.addObject(step.?);
+                } else {
+                    mod.root_module.linkLibrary(step.?);
+                }
             }
         }
 
@@ -319,7 +332,9 @@ pub fn build(b: *std.Build) !void {
             mod.root_module.linkSystemLibrary(dep, .{});
         }
 
-        b.installArtifact(mod);
+        if (module.kind != .obj) {
+            b.installArtifact(mod);
+        }
     }
 
     b.addNamedLazyPath("ssl_include", upstream_root.path(b, "include"));
