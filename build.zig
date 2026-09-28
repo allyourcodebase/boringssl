@@ -257,7 +257,11 @@ pub fn build(b: *std.Build) !void {
     const nasm = nasm_dep.artifact("nasm");
 
     // Keep track of added modules so others can depend on them
-    var steps = std.StringHashMap(*std.Build.Step.Compile).init(b.allocator);
+    const CompileStep = struct {
+        module: *const BoringSSLModule,
+        compile: *std.Build.Step.Compile,
+    };
+    var steps = std.StringHashMap(CompileStep).init(b.allocator);
 
     // Setup all modules to not require any order when modules depend on other modules
     for (modules) |*module| {
@@ -291,52 +295,60 @@ pub fn build(b: *std.Build) !void {
             else => unreachable,
         };
 
-        // Depend on patch
-        // mod.step.dependOn(&patch_step.step);
-
         // Add to set
-        try steps.put(module.name, mod);
+        try steps.put(module.name, .{
+            .compile = mod,
+            .module = module.module,
+        });
     }
 
     for (modules) |*module| {
         // This has to be valid - we just created it
-        const mod = steps.get(module.name).?;
+        const compile_step = steps.get(module.name).?;
+        const compile = compile_step.compile;
 
         // Add the sources from the json module to the zig mod
-        try addSourceFilesFromModule(b, upstream_root, mod, module.module, nasm);
+        try addSourceFilesFromModule(b, upstream_root, compile, module.module, nasm);
 
         // Link to other boringssl modules
         if (module.module_dependencies) |dependencies| {
             for (dependencies) |dep| {
-                const step = steps.get(dep);
-                if (step == null) {
-                    std.log.err("Module: {s} depends on {s} but wasn't found - change the step order", .{ mod.name, dep });
+                const step_maybe = steps.get(dep);
+                const dep_step = step_maybe orelse {
+                    std.log.err("Module: {s} depends on {s} but wasn't found - change the step order", .{ compile.name, dep });
                     return error.InvalidStepOrder;
-                }
+                };
 
-                if (step.?.kind == .obj) {
-                    mod.root_module.addObject(step.?);
+                if (dep_step.compile.kind == .obj) {
+                    if (target.result.ofmt == .coff) {
+                        // In coff we cannot bundle multiple object files into one
+                        // Therefor we need to include the source files directly
+                        // Add the sources from the json module to the zig mod
+                        try addSourceFilesFromModule(b, upstream_root, compile, dep_step.module, nasm);
+                    } else {
+                        compile.root_module.addObject(dep_step.compile);
+                    }
                 } else {
-                    mod.root_module.linkLibrary(step.?);
+                    compile.root_module.linkLibrary(dep_step.compile);
                 }
             }
         }
 
         // Link other libraries needed
         for (module.dependencies) |dep| {
-            mod.root_module.linkLibrary(dep);
+            compile.root_module.linkLibrary(dep);
         }
 
         // Link system dependencies
         for (module.system_dependencies) |dep| {
-            mod.root_module.linkSystemLibrary(dep, .{});
+            compile.root_module.linkSystemLibrary(dep, .{});
         }
 
         if (module.kind != .obj) {
-            b.installArtifact(mod);
+            b.installArtifact(compile);
         }
     }
 
     b.addNamedLazyPath("ssl_include", upstream_root.path(b, "include"));
-    steps.get("ssl").?.installHeadersDirectory(upstream_root.path(b, "include"), "", .{});
+    steps.get("ssl").?.compile.installHeadersDirectory(upstream_root.path(b, "include"), "", .{});
 }
