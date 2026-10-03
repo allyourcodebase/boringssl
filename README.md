@@ -19,7 +19,6 @@ const boringssl_dependency = b.dependency("boringssl", .{
     .target = target,
     .optimize = optimize,
 });
-your_module.linkLibrary(boringssl_dependency.artifact("bcm"));
 your_module.linkLibrary(boringssl_dependency.artifact("ssl"));
 your_module.linkLibrary(boringssl_dependency.artifact("crypto"));
 ```
