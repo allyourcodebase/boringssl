@@ -9,8 +9,8 @@
             .hash = "N-V-__8AAJhc0w0H8yQ1jOqE3CHmQtOLsdy2qmZ5l4AsJya7",
         },
         .nasm = .{
-            .url = "git+https://github.com/allyourcodebase/nasm.git#d7356eadb2d7771542fe74e8fc0668bd78732b59",
-            .hash = "nasm-3.0.1-B_NnpQpTAAA25UxvqONakXtmj-a78PGe3xfgyDFgetb0",
+            .url = "git+https://github.com/allyourcodebase/nasm.git#f11aa6ed5a7eb339259b3439b3e47d58dba998cc",
+            .hash = "nasm-3.0.1-B_NnpSJUAABp8P_x6B1dPmYEcBVlfF06ZpyWcCvl461C",
         },
         .patch = .{
             .url = "git+https://github.com/akunaakwei/zig-patch#918b45387bb0e8afe629984faf2353fab0efab21",
