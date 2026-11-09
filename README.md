@@ -9,7 +9,7 @@ First, update your `build.zig.zon`:
 ```
 # Initialize a `zig build` project if you haven't already
 zig init
-zig fetch --save git+https://github.com/lukaskastern/boringssl.git
+zig fetch --save git+https://github.com/allyourcodebase/boringssl.git
 ```
 
 You can then link `boringssl` in your `build.zig` with:
